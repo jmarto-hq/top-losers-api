@@ -21,7 +21,7 @@ def get_top_losers():
         quotes = results[0].get("quotes", [])
         
         filtered_losers = []
-        min_market_cap = 3_000_000_000  # $2.0 Billones USD
+        min_market_cap = 3_000_000_000  # $3.0 Billones USD
         
         for item in quotes:
             market_cap = item.get("marketCap", 0) or 0
