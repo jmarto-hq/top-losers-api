@@ -36,7 +36,7 @@ def get_top_losers():
         
         return {
             "total_encontrados": len(filtered_losers),
-            "top_losers": filtered_losers[:100]
+            "top_losers": filtered_losers[:150]
         }
     except Exception as e:
         return {"error": str(e)}
