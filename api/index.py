@@ -1,33 +1,39 @@
 from fastapi import FastAPI
-import yfinance as yf
+import requests
 
 app = FastAPI()
 
 @app.get("/top-losers")
 def get_top_losers():
     try:
-        # Consultar el screener de caídas de Yahoo Finance
-        screener = yf.Screener()
-        data = screener.get_screeners(["day_losers"], count=100)
+        url = "https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?formatted=false&lang=en-US&region=US&scrIds=day_losers&count=100"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
         
-        quotes = data.get("day_losers", {}).get("quotes", [])
+        response = requests.get(url, headers=headers)
+        data = response.json()
+        
+        results = data.get("finance", {}).get("result", [])
+        if not results:
+            return {"total_encontrados": 0, "top_losers": []}
+            
+        quotes = results[0].get("quotes", [])
         
         filtered_losers = []
-        # Umbral: 2.5 Billion USD (2,500,000,000)
-        min_market_cap = 2_500_000_000 
+        min_market_cap = 2_500_000_000  # $2.5 Billones USD
         
         for item in quotes:
             market_cap = item.get("marketCap", 0) or 0
             if market_cap >= min_market_cap:
                 filtered_losers.append({
                     "ticker": item.get("symbol"),
-                    "name": item.get("shortName"),
+                    "name": item.get("shortName") or item.get("longName"),
                     "price": item.get("regularMarketPrice"),
                     "change_percent": item.get("regularMarketChangePercent"),
                     "market_cap_usd": market_cap
                 })
         
-        # Devolver los primeros 25 resultados filtrados
         return {
             "total_encontrados": len(filtered_losers),
             "top_losers": filtered_losers[:25]
