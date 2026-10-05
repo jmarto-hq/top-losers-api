@@ -8,7 +8,22 @@ shock_atr = abs(relevant_drawdown_pct) / ATRP14
 
 recovery_pct = (target_price - entry_price) / (anchor_price - entry_price) * 100
 
-Baseline targets: T1 = entry + 0.75 * ATR14; T2 = entry + 1.00 * ATR14; T3 = entry + 1.50 * ATR14.
+## 52-week context
+week52_position_pct = (current_price - week52_low) / (week52_high - week52_low) * 100
+
+pct_above_52w_low = (current_price / week52_low - 1) * 100
+
+pct_below_52w_high = (current_price / week52_high - 1) * 100
+
+If week52_high == week52_low, render the range as unavailable rather than divide by zero.
+
+The 52-week range is descriptive context, not a standalone signal.
+
+## Targets
+Baseline targets:
+T1 = entry + 0.75 * ATR14
+T2 = entry + 1.00 * ATR14
+T3 = entry + 1.50 * ATR14
 
 profile_target = entry * (1 + target_return_pct / 100)
 
