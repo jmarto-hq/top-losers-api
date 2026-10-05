@@ -1,0 +1,22 @@
+create extension if not exists pgcrypto;
+
+create table if not exists profiles (user_id uuid primary key references auth.users(id) on delete cascade, display_name text, target_return_pct numeric not null default 3, margin_enabled boolean not null default false, base_position_usd numeric not null default 30000, max_position_usd numeric not null default 60000, min_market_cap_usd numeric not null default 2000000000, min_fallback_score integer not null default 75, max_knife_risk text not null default 'MEDIUM', max_tactical_sessions integer not null default 28, max_loss_usd numeric, t1_allocation_pct numeric not null default 40, t2_allocation_pct numeric not null default 40, runner_allocation_pct numeric not null default 20, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+
+create table if not exists universe_tickers (symbol text primary key, company_name text, exchange text, sector text, industry text, market_cap_usd numeric, avg_dollar_volume numeric, active boolean not null default true, refreshed_at timestamptz not null default now());
+
+create table if not exists market_snapshots (id bigserial primary key, symbol text not null references universe_tickers(symbol), source text not null, source_timestamp timestamptz not null, ingested_at timestamptz not null default now(), session text not null, price numeric not null, prev_close numeric, session_change_pct numeric, volume numeric, atr14 numeric, atrp14 numeric, high_5d numeric, high_10d numeric, high_20d numeric, dd_5d_pct numeric, dd_10d_pct numeric, dd_20d_pct numeric, shock_atr numeric, slope_5d numeric, slope_20d numeric, slope_50d numeric, knife_risk text, is_delayed boolean not null default false);
+create index if not exists market_snapshots_symbol_ts on market_snapshots(symbol, source_timestamp desc);
+
+create table if not exists candidate_assessments (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade, symbol text not null references universe_tickers(symbol), assessed_at timestamptz not null default now(), decision text not null, tactical_score numeric, fallback_score integer, fallback_grade text, knife_risk text, catalyst_class text, hard_veto boolean not null default false, veto_reason text, best_reason_to_buy text, best_reason_not_to_buy text, anchor_price numeric, entry_price numeric, invalidation_price numeric, t1_price numeric, t2_price numeric, t3_price numeric, model_version text not null default '2.0');
+
+create table if not exists trades (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade, symbol text not null references universe_tickers(symbol), candidate_assessment_id uuid references candidate_assessments(id), status text not null default 'OPEN', entry_timestamp timestamptz not null, entry_price numeric not null, shares numeric not null, position_usd numeric not null, margin_used boolean not null default false, invalidation_price numeric, original_target_return_pct numeric, t1_price numeric, t2_price numeric, t3_price numeric, t1_allocation_pct numeric, t2_allocation_pct numeric, runner_allocation_pct numeric, mfe_pct numeric, mae_pct numeric, closed_at timestamptz);
+
+create table if not exists trade_exits (id uuid primary key default gen_random_uuid(), trade_id uuid not null references trades(id) on delete cascade, exit_timestamp timestamptz not null, shares numeric not null, price numeric not null, exit_type text, notes text);
+
+create table if not exists alerts (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade, symbol text, trade_id uuid references trades(id) on delete cascade, alert_type text not null, title text not null, body text, read_at timestamptz, created_at timestamptz not null default now());
+
+alter table profiles enable row level security; alter table candidate_assessments enable row level security; alter table trades enable row level security; alter table alerts enable row level security;
+create policy "profiles own row" on profiles for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "assessments own rows" on candidate_assessments for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "trades own rows" on trades for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "alerts own rows" on alerts for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
