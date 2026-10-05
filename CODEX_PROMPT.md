@@ -25,10 +25,11 @@ Non-negotiable rules:
 9. Mobile UX is first-class. Use Dashboard / Scanner / Trades / History / Settings only as primary navigation.
 10. Tooltips must work by hover/focus on desktop and tap on mobile.
 11. Always display data freshness and session state.
-12. Start in mock mode and keep provider interfaces clean. Do not block Phase 1 on paid API keys.
-13. No brokerage execution or auto-trading in the first release.
-14. Do not expose service-role keys or market-data keys to client bundles.
-15. Keep the UI calm and decision-first; avoid terminal-style density.
+12. Every stock view/card/row must display 52-week Low, Current, High, and a proportional current-price marker within the 52-week range; also show % above low and % below high where space allows.
+13. Start in mock mode and keep provider interfaces clean. Do not block Phase 1 on paid API keys.
+14. No brokerage execution or auto-trading in the first release.
+15. Do not expose service-role keys or market-data keys to client bundles.
+16. Keep the UI calm and decision-first; avoid terminal-style density.
 
 For every phase:
 - make the smallest coherent implementation;
@@ -44,6 +45,7 @@ Phase 1 deliverable:
 - candidate detail page;
 - Settings form with two example profiles;
 - formula tooltips;
+- 52-week range component on candidate cards/rows/detail;
 - trade-plan card with proposed sell ladder;
 - PWA manifest;
 - tests for formulas;
