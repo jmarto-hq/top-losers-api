@@ -11,6 +11,19 @@ All calculations use the signed-in user's profile.
 ## Goal
 Surface a short list of U.S.-listed stocks experiencing abnormal sell-offs, explain why each qualifies or fails, and output an executable plan including proposed sell orders.
 
+## Mandatory big-picture context
+Every candidate must carry:
+- 52-week low
+- 52-week high
+- current price
+- current percentile/location inside the 52-week range
+- % above 52-week low
+- % below 52-week high
+
+The UI must visualize low -> current -> high on Dashboard candidate cards, Scanner rows/cards, Trade views, and Candidate detail.
+
+52-week context is descriptive only and must not create a BUY by itself. It may contribute to falling-knife/fallback interpretation but cannot override hard vetos.
+
 ## Hard gates
 No BUY when market cap < $2B; material distress/bankruptcy risk; going-concern warning; default/covenant breach; fraud/restatement/material accounting crisis; delisting risk; structural regulatory damage; permanent core earnings-power impairment; unacceptable falling-knife state; or stale/insufficient data.
 
@@ -40,4 +53,4 @@ Invalidation before entry; tighten profit protection after T1/material rebound; 
 A failed trade never becomes a long automatically. Require intact fundamentals, no structural change, fallback still passes, valuation supports 12–24 month thesis, and user would buy from zero today.
 
 ## Learning loop
-Store exact entry time, session, size, ATRP, shock, drawdowns, knife/fallback scores, catalyst, targets, exits, MFE, MAE, time-to-target, recovery captured and opportunity left after exit.
+Store exact entry time, session, size, ATRP, shock, drawdowns, 52-week low/high/location, knife/fallback scores, catalyst, targets, exits, MFE, MAE, time-to-target, recovery captured and opportunity left after exit.
