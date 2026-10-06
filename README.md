@@ -9,3 +9,7 @@
 Run regression tests: `python -m unittest discover -s tests -v`.
 
 For Sites: persist the canonical universe snapshot; refresh quotes separately for watchlist symbols; show both fetch time and price/bar time. Run unattended updates through authenticated Site service access and keep secrets out of browser code.
+
+
+## Research data
+`GET /history?symbol=TWST` returns up to two years of provider daily OHLC, volume and separate adjusted closes. Latest daily bar can be incomplete. Consumer must filter future/incomplete bars against analysis snapshot; no invented history when Yahoo fails. `/top-losers` also preserves provider trailing/forward P/E, trailing EPS, average volume, sector and industry when present; missing values remain null. These fields alone do not prove cheapness, normalized earnings or research completion.

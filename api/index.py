@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from math import isfinite
 import re
-from api.data import DataError, MAX_ROWS, now_iso, universe_payload, chart_quote
+from api.data import DataError, MAX_ROWS, now_iso, universe_payload, chart_quote, history_payload
 from fastapi.responses import JSONResponse
 import requests
 from fastapi import FastAPI, HTTPException, Query, Response
@@ -63,3 +63,16 @@ def get_quotes(response: Response, symbols: str = Query(..., max_length=300)):
 @app.get("/health")
 def health():
     return {"status": "ok", "version": "1.9", "max_rows": MAX_ROWS, "generated_at": now_iso()}
+
+
+@app.get("/history")
+def get_history(response: Response, symbol: str = Query(..., max_length=15)):
+    response.headers["Cache-Control"] = "no-store"
+    name = symbol.strip().upper()
+    if not re.fullmatch(r"[A-Z0-9^][A-Z0-9.\-^=]{0,14}", name):
+        raise HTTPException(422, detail="Símbolo inválido.")
+    try:
+        data = fetch_json(f"https://query1.finance.yahoo.com/v8/finance/chart/{name}", {"range": "2y", "interval": "1d", "includePrePost": "false", "events": "splits,div"})
+        return history_payload(name, data)
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(502, detail="Histórico diario no disponible; no se inventan barras.") from exc

@@ -54,6 +54,11 @@ def universe_payload(data, generated_at):
             "price_session": "REGULAR", "market_state": item.get("marketState"),
             "exchange": item.get("fullExchangeName") or item.get("exchange"),
             "quote_type": item.get("quoteType"), "currency": item.get("currency"),
+            "trailing_pe": number(item.get("trailingPE")), "forward_pe": number(item.get("forwardPE")),
+            "average_daily_volume_3m": number(item.get("averageDailyVolume3Month")),
+            "average_daily_volume_10d": number(item.get("averageDailyVolume10Day")),
+            "trailing_eps": number(item.get("epsTrailingTwelveMonths")),
+            "sector": item.get("sector"), "industry": item.get("industry"),
         })
     if not rows:
         raise DataError({"code": "EMPTY_ELIGIBLE_UNIVERSE", "message": "No hay filas elegibles utilizables; no se sustituye el universo."})
@@ -125,3 +130,22 @@ def chart_quote(symbol, data):
             "note": "Últimas barras disponibles por sesión; no son bid/ask ni cotizaciones con latencia garantizada."}
 
 
+
+def history_payload(symbol, data):
+    chart=data.get('chart') or {}
+    result=chart.get('result')
+    if chart.get('error') or not isinstance(result,list) or not result:
+        raise ValueError('No daily history')
+    item=result[0]
+    quotes=((item.get('indicators') or {}).get('quote') or [{}])[0]
+    adjusted=((item.get('indicators') or {}).get('adjclose') or [{}])[0].get('adjclose') or []
+    bars=[]
+    for i,ts in enumerate(item.get('timestamp') or []):
+        date=timestamp(ts)
+        values={k:number((quotes.get(k) or [])[i]) if i<len(quotes.get(k) or []) else None for k in ('open','high','low','close','volume')}
+        if date is None or values['close'] is None or values['close']<=0:
+            continue
+        bars.append({'date':datetime.fromtimestamp(ts,NY).date().isoformat(),'timestamp':date,**values,'adjusted_close':number(adjusted[i]) if i<len(adjusted) else None})
+    if not bars:
+        raise ValueError('No usable daily bars')
+    return {'ticker':symbol,'generated_at':now_iso(),'source':'Yahoo Finance chart / 1d','price_basis':'OHLC provider close; adjusted_close separate; latest daily bar may be incomplete','bars':bars,'currency':(item.get('meta') or {}).get('currency')}

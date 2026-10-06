@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime,timedelta
 from zoneinfo import ZoneInfo
 from unittest.mock import patch
-from api.data import DataError, universe_payload, chart_quote
+from api.data import DataError, universe_payload, chart_quote, history_payload
 
 class DataTests(unittest.TestCase):
  def item(self, symbol='AAA', **kw):
@@ -53,3 +53,15 @@ class DataTests(unittest.TestCase):
   with self.assertRaises(DataError):universe_payload(self.payload([item]),'date')
 
 if __name__=='__main__':unittest.main()
+
+class HistoryTests(unittest.TestCase):
+    def test_history_does_not_fabricate_missing_fields(self):
+        data={"chart":{"result":[{"timestamp":[1788269400,1788355800],"indicators":{"quote":[{"close":[10,None],"volume":[5,6]}]}}]}}
+        row=history_payload("ABC",data)
+        self.assertEqual(len(row["bars"]),1)
+        self.assertIsNone(row["bars"][0]["open"])
+        self.assertIsNone(row["bars"][0]["adjusted_close"])
+        self.assertEqual(row["bars"][0]["close"],10)
+    def test_empty_history_is_explicit_failure(self):
+        with self.assertRaises(ValueError):
+            history_payload("ABC",{"chart":{"result":[]}})
