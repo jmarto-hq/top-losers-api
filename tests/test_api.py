@@ -1,4 +1,6 @@
 import unittest
+from datetime import datetime,timedelta
+from zoneinfo import ZoneInfo
 from unittest.mock import patch
 from api.data import DataError, universe_payload, chart_quote
 
@@ -31,5 +33,23 @@ class DataTests(unittest.TestCase):
   self.assertIsNone(result['sessions']['PRE'])
   self.assertIsNone(result['sessions']['POST'])
   self.assertEqual(result['sessions']['REGULAR']['kind'],'ONE_MINUTE_BAR')
+
+ def test_extended_percent_uses_previous_regular_bar(self):
+  day=datetime.now(ZoneInfo("America/New_York")).replace(hour=9,minute=30,second=0,microsecond=0)
+  start=int(day.timestamp());end=start+23400
+  previous=int((day-timedelta(days=1)).replace(hour=15,minute=59).timestamp())
+  meta={'currentTradingPeriod':{'regular':{'start':start,'end':end},'pre':{'start':start-19800},'post':{'end':end+14400}}}
+  data={'chart':{'result':[{'meta':meta,'timestamp':[previous,start-1800,start+1800,end+1800],'indicators':{'quote':[{'close':[100,90,110,112],'volume':[1,1,1,1]}]}}]}}
+  result=chart_quote('AAA',data)['sessions']
+  self.assertEqual(result['PRE']['reference_price'],100)
+  self.assertAlmostEqual(result['PRE']['change_percent'],-10)
+  self.assertEqual(result['POST']['reference_price'],110)
+ def test_unknown_timestamp_stays_unknown(self):
+  result=universe_payload(self.payload([self.item()]),'date')
+  self.assertIsNone(result['top_losers'][0]['quote_as_of'])
+  self.assertEqual(result['quote_timestamp_coverage'],0)
+ def test_nonfinite_price_is_not_accepted(self):
+  item=self.item();item['regularMarketPrice']=float('nan')
+  with self.assertRaises(DataError):universe_payload(self.payload([item]),'date')
 
 if __name__=='__main__':unittest.main()
